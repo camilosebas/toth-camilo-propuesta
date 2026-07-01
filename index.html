@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Camilo Monsalve × TOTH — Simulador de Inversión Multimedia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/MotionPathPlugin.min.js"></script>
+<style>
+  :root{
+    --ink:#1f2430; --dim:#6b7280;
+    --glass:rgba(255,255,255,.5); --glass-hi:rgba(255,255,255,.75); --glass-border:rgba(255,255,255,.65);
+    --violet:#8b7cf6; --violet2:#6a5acd; --mint:#4fd1c5; --mint2:#0d9488;
+    --peach:#f7b899; --peach2:#f4978e; --blue:#93c5fd; --lav:#c4b5fd;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;min-height:100vh;color:var(--ink);font-family:'Quicksand',sans-serif;
+    display:flex;flex-direction:column;align-items:center;padding:clamp(16px,4vw,48px);
+    background:#f6efe6;overflow-x:hidden;position:relative;
+  }
+  .blob{position:fixed;border-radius:50%;filter:blur(70px);opacity:.55;z-index:0;pointer-events:none;}
+  .b1{width:420px;height:420px;background:var(--violet);top:-120px;left:-100px;}
+  .b2{width:380px;height:380px;background:var(--mint);bottom:-140px;right:-100px;}
+  .b3{width:300px;height:300px;background:var(--peach);top:40%;right:10%;}
+  #spotlight{position:fixed;width:340px;height:340px;border-radius:50%;pointer-events:none;z-index:1;
+    background:radial-gradient(circle,rgba(255,255,255,.5),transparent 70%);
+    transform:translate(-50%,-50%);left:0;top:0;mix-blend-mode:screen;}
+
+  h1{position:relative;z-index:2;font-size:clamp(20px,3vw,30px);margin:52px 0 22px;text-align:center;font-weight:700;}
+
+  .glass{background:linear-gradient(135deg,var(--glass-hi),var(--glass));backdrop-filter:blur(18px) saturate(160%);
+    border:1px solid var(--glass-border);box-shadow:0 12px 34px rgba(80,60,120,.14);border-radius:26px;}
+
+  .bevel{position:relative;box-shadow:
+    inset 0 1.5px 1px rgba(255,255,255,.95),
+    inset 0 -3px 6px rgba(107,114,128,.22),
+    0 8px 18px rgba(80,60,120,.18);}
+  .bevel::before{content:'';position:absolute;top:2px;left:8%;right:8%;height:38%;border-radius:999px 999px 60% 60%;
+    background:linear-gradient(180deg,rgba(255,255,255,.75),rgba(255,255,255,0));pointer-events:none;}
+
+  #helpBtn{position:fixed;top:18px;right:18px;z-index:30;padding:9px 18px;font-family:'Quicksand',sans-serif;
+    font-weight:700;font-size:12.5px;color:var(--violet2);border:none;border-radius:999px;cursor:pointer;}
+
+  .wheel-wrap{position:relative;z-index:2;width:min(440px,86vw);aspect-ratio:1/1;margin-bottom:10px;
+    transform-style:preserve-3d;transition:transform .1s ease-out;}
+  svg.wheel{width:100%;height:100%;overflow:visible;}
+  .seg{cursor:pointer;transition:opacity .25s ease,filter .25s ease;opacity:.5;}
+  .seg.active{opacity:1;filter:drop-shadow(0 6px 14px rgba(80,60,120,.35));}
+  .seg-icon{pointer-events:none;font-size:16px;text-anchor:middle;fill:#fff;font-weight:700;}
+
+  .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;pointer-events:none;}
+  .center-disc{width:58%;height:58%;border-radius:50%;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;padding:8px;}
+  .center .price{font-size:clamp(20px,3.6vw,28px);font-weight:700;letter-spacing:-.01em;line-height:1.1;color:var(--ink);}
+  .center .label{font-size:9.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-top:5px;}
+  .center .fmt{font-size:12px;margin-top:6px;font-weight:600;color:var(--violet2);}
+  .breakdown{display:none;flex-direction:column;gap:5px;text-align:center;}
+  .breakdown.show{display:flex;}
+  .breakdown .row{font-size:9.5px;line-height:1.25;}
+  .breakdown .row b{display:block;font-size:11px;color:var(--violet2);}
+  .breakdown .row span{color:var(--dim);font-size:8.5px;text-transform:uppercase;letter-spacing:.03em;}
+
+  .bubble{position:fixed;max-width:240px;padding:13px 30px 13px 16px;font-size:12px;line-height:1.5;color:var(--ink);
+    background:#fffdf9;border:1px solid rgba(255,255,255,.9);border-radius:18px;
+    box-shadow:0 10px 26px rgba(80,60,120,.22);z-index:40;opacity:0;transform:translate(-50%,-100%) scale(.7);
+    transform-origin:bottom center;pointer-events:none;text-align:left;left:-9999px;top:-9999px;}
+  .bubble.visible{pointer-events:auto;}
+  .bubble::after{content:'';position:absolute;bottom:-8px;left:50%;transform:translateX(-50%) rotate(45deg);
+    width:16px;height:16px;background:#fffdf9;border-right:1px solid rgba(255,255,255,.9);
+    border-bottom:1px solid rgba(255,255,255,.9);}
+  .bubble-close{position:absolute;top:8px;right:9px;width:17px;height:17px;border-radius:50%;
+    background:rgba(107,114,128,.15);color:var(--dim);font-size:10px;font-weight:700;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;pointer-events:auto;}
+  .bubble ul{margin:0;padding:0;list-style:none;}
+  .bubble li{position:relative;padding-left:14px;margin-bottom:6px;}
+  .bubble li:first-child{font-size:13px;}
+  .bubble li:last-child{margin-bottom:0;}
+  .bubble li::before{content:'●';position:absolute;left:0;top:0;font-size:7px;color:var(--peach2);}
+  .hl-violet{color:var(--violet2);font-weight:700;}
+  .hl-mint{color:var(--mint2);font-weight:700;}
+  .hl-peach{color:#e06a52;font-weight:700;}
+
+  .legend{position:relative;z-index:2;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;
+    max-width:480px;margin:14px 0 22px;}
+  .legend span{font-size:11.5px;color:var(--dim);display:flex;align-items:center;gap:6px;}
+  .legend i{width:9px;height:9px;border-radius:50%;display:inline-block;}
+
+  .quoter{position:relative;z-index:2;display:flex;gap:14px;flex-wrap:wrap;justify-content:center;
+    align-items:center;padding:14px 20px;margin-bottom:26px;}
+  .qfield{display:flex;flex-direction:column;gap:4px;align-items:flex-start;}
+  .qfield label{font-size:9.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.05em;}
+  .qfield select,.qfield input{font-family:'Quicksand',sans-serif;font-weight:700;font-size:13px;color:var(--violet2);
+    border:none;border-bottom:2px dashed rgba(107,114,128,.4);background:transparent;padding:2px 0;width:100px;}
+  .fx-status{font-size:10px;color:var(--dim);}
+
+  .journey{position:relative;z-index:2;width:min(560px,92vw);padding:22px 10px 16px;margin-bottom:26px;}
+  .journey svg{width:100%;display:block;}
+  .node{cursor:pointer;}
+  .node circle.ring{fill:rgba(255,255,255,.6);stroke:rgba(107,114,128,.3);stroke-width:2;
+    transition:stroke .3s ease,fill .3s ease;}
+  .node.active circle.ring{stroke:var(--mint2);fill:#fff;}
+  .node ellipse.shine{fill:rgba(255,255,255,.8);pointer-events:none;}
+  .node text{fill:var(--ink);font-size:13px;font-weight:700;text-anchor:middle;pointer-events:none;}
+  .node text.sub{fill:var(--dim);font-size:9.5px;font-weight:500;}
+  path.ribbon{fill:none;stroke:rgba(107,114,128,.35);stroke-width:2;stroke-dasharray:4 6;}
+  circle.traveler{fill:var(--mint2);filter:drop-shadow(0 0 8px var(--mint2));}
+
+  .journey-stats{display:flex;justify-content:center;gap:28px;margin-top:10px;align-items:flex-end;}
+  .journey-stats .stat{text-align:center;}
+  .journey-stats .stat b{display:block;font-size:20px;color:var(--violet2);}
+  .journey-stats .stat span{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.05em;
+    display:flex;align-items:center;gap:4px;justify-content:center;}
+  #hoursInput{width:62px;font-family:'Quicksand',sans-serif;font-weight:700;font-size:20px;color:var(--violet2);
+    text-align:center;border:none;border-bottom:2px dashed rgba(107,114,128,.4);background:transparent;}
+  .help-dot{width:14px;height:14px;border-radius:50%;background:rgba(107,114,128,.25);color:var(--dim);
+    font-size:9px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-weight:700;}
+
+  .addons{position:relative;z-index:2;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;
+    max-width:600px;margin-bottom:30px;}
+  .pill{position:relative;padding:10px 17px;font-size:12.5px;display:flex;align-items:center;gap:7px;
+    border-radius:999px;transition:transform .2s ease;cursor:default;}
+  .pill:hover{transform:translateY(-3px);}
+  .pill .dot{width:6px;height:6px;border-radius:50%;background:var(--peach2);}
+
+  .info-toggle{position:relative;z-index:2;font-size:11px;color:var(--dim);width:26px;height:26px;
+    border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-bottom:10px;}
+  .info-panel{position:relative;z-index:2;max-width:640px;max-height:0;overflow:hidden;
+    transition:max-height .4s ease,opacity .4s ease;opacity:0;}
+  .info-panel.open{max-height:260px;opacity:1;margin-bottom:24px;}
+  .info-cards{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;padding:16px;}
+  .info-card{width:170px;padding:16px 14px;border-radius:18px;text-align:center;}
+  .info-card .emoji{font-size:26px;margin-bottom:8px;}
+  .info-card b{display:block;font-size:12.5px;margin-bottom:5px;color:var(--violet2);}
+  .info-card p{margin:0;font-size:11px;color:var(--dim);line-height:1.4;}
+
+  .contact{position:relative;z-index:2;width:min(420px,90vw);padding:20px 24px;text-align:center;margin-bottom:10px;}
+  .contact .name{font-size:16px;font-weight:700;color:var(--ink);}
+  .contact .role{font-size:11.5px;color:var(--dim);margin:3px 0 10px;}
+  .contact .chan{font-size:12px;color:var(--violet2);font-weight:600;}
+
+  #splashBackdrop{position:fixed;inset:0;background:rgba(31,36,48,.35);backdrop-filter:blur(6px);
+    z-index:50;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;}
+  #splashBackdrop.open{opacity:1;pointer-events:auto;}
+  .splash-card{max-width:520px;width:100%;max-height:86vh;overflow-y:auto;padding:30px 28px;position:relative;
+    transform:scale(.9) translateY(20px);}
+  #splashBackdrop.open .splash-card{transform:scale(1) translateY(0);transition:transform .35s ease;}
+  .splash-close{position:absolute;top:14px;right:16px;width:28px;height:28px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:700;color:var(--dim);}
+  .splash-card h2{margin:0 0 14px;font-size:20px;font-weight:700;}
+  .splash-card ul{margin:0 0 18px;padding:0;list-style:none;}
+  .splash-card li{position:relative;padding-left:18px;margin-bottom:10px;font-size:13px;line-height:1.5;}
+  .splash-card li::before{content:'●';position:absolute;left:0;top:1px;font-size:8px;color:var(--peach2);}
+  .splash-contact{border-top:1px solid rgba(107,114,128,.2);padding-top:16px;text-align:center;}
+  .splash-contact .name{font-size:15px;font-weight:700;}
+  .splash-contact .role{font-size:11.5px;color:var(--dim);margin:2px 0 14px;}
+  .splash-links{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+  .splash-links a{text-decoration:none;font-size:11.5px;font-weight:700;color:var(--violet2);
+    padding:8px 14px;border-radius:999px;}
+  .wa-btn{background:linear-gradient(135deg,#25D366,#128C7E)!important;color:#fff!important;}
+</style>
+</head>
+<body>
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+  <div id="spotlight"></div>
+
+  <button id="helpBtn" class="glass bevel">Ayuda</button>
+
+  <h1>Ecosistema de Inversión Multimedia IA-First</h1>
+
+  <div class="wheel-wrap" id="wheelWrap">
+    <svg class="wheel" viewBox="0 0 300 300"></svg>
+    <div class="center">
+      <div class="center-disc glass bevel">
+        <div id="centerSingle">
+          <div class="price" id="centerPrice">USD $0</div>
+          <div class="label" id="centerUnit">por segundo entregado</div>
+          <div class="fmt" id="centerFmt">Avatar IA</div>
+        </div>
+        <div class="breakdown" id="centerBreakdown">
+          <div class="row"><span>Modelado (único)</span><b id="bdModel">USD $0</b></div>
+          <div class="row"><span>Anim. Unity/Unreal</span><b id="bdUnity">USD $0/seg</b></div>
+          <div class="row"><span>Anim. Video/Render</span><b id="bdVideo">USD $0/seg</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="legend" id="legend"></div>
+
+  <div class="quoter glass bevel">
+    <div class="qfield">
+      <label>Moneda</label>
+      <select id="currencySelect">
+        <option value="USD">USD — Dólar</option>
+        <option value="ARS">ARS — Argentina</option>
+        <option value="COP">COP — Colombia</option>
+        <option value="PEN">PEN — Perú</option>
+        <option value="PAB">PAB — Panamá</option>
+        <option value="EUR">EUR — España</option>
+      </select>
+    </div>
+    <div class="qfield">
+      <label>Comisión de venta (%)</label>
+      <input id="commissionInput" type="number" min="0" max="200" step="1" value="0">
+    </div>
+    <div class="fx-status" id="fxStatus">Cargando tasas de cambio…</div>
+  </div>
+
+  <div class="journey glass">
+    <svg viewBox="0 0 560 140">
+      <path class="ribbon" id="ribbonPath" d="M 90 70 C 220 0, 340 140, 470 70"></path>
+      <circle class="traveler" id="traveler" r="6" cx="90" cy="70"></circle>
+      <g class="node active" id="nodeFreelance" transform="translate(90,70)">
+        <circle class="ring" r="46"></circle>
+        <ellipse class="shine" cx="-14" cy="-22" rx="16" ry="8" opacity=".5"></ellipse>
+        <text y="-4">Freelance</text>
+        <text class="sub" y="14">70% dedicación</text>
+      </g>
+      <g class="node" id="nodeFijo" transform="translate(470,70)">
+        <circle class="ring" r="46"></circle>
+        <ellipse class="shine" cx="-14" cy="-22" rx="16" ry="8" opacity=".5"></ellipse>
+        <text y="-4">Formato Fijo</text>
+        <text class="sub" y="14">100% dedicación</text>
+      </g>
+    </svg>
+    <div class="journey-stats">
+      <div class="stat"><input id="hoursInput" type="number" step="0.1" min="1" max="16" value="8.4"><span>Efectivas / día <span class="help-dot" id="hoursHelp">?</span></span></div>
+      <div class="stat"><b id="statCap">0</b><span>Min / mes</span></div>
+    </div>
+  </div>
+
+  <div class="addons">
+    <div class="pill glass bevel" data-legend="upres"><span class="dot"></span>Up-res con IA</div>
+    <div class="pill glass bevel" data-legend="brand">Brand Motion Guidelines</div>
+  </div>
+
+  <div class="info-toggle glass bevel" id="infoToggle">i</div>
+  <div class="info-panel glass" id="infoPanel">
+    <div class="info-cards">
+      <div class="info-card glass bevel">
+        <div class="emoji">💵</div><b>Tarifa base de Camilo Monsalve</b>
+        <p>USD $70 por cada hora real que Camilo dedica a tu proyecto.</p>
+      </div>
+      <div class="info-card glass bevel">
+        <div class="emoji">📅</div><b>El dato de la reunión</b>
+        <p>1 minuto de Avatar IA toma 2-3 días. Camilo lo dijo el 30-jun-2026.</p>
+      </div>
+      <div class="info-card glass bevel">
+        <div class="emoji">🎚️</div><b>Todo se puede ajustar</b>
+        <p>Cambia horas, moneda y comisión: el precio se mueve en vivo, en frente tuyo.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="contact glass bevel">
+    <div class="name">Camilo Monsalve Moreno</div>
+    <div class="role">Diseñador Multimedia · AI Video Orchestrator</div>
+    <div class="chan">camilosebas@gmail.com</div>
+  </div>
+
+  <div class="bubble" id="bubble">
+    <span class="bubble-close" id="bubbleClose">✕</span>
+    <div class="bubble-content" id="bubbleContent"></div>
+  </div>
+
+  <div id="splashBackdrop">
+    <div class="splash-card glass">
+      <div class="splash-close bevel" id="splashClose">✕</div>
+      <h2>¿Qué es esta herramienta?</h2>
+      <ul>
+        <li>Este es un <b class="hl-violet">simulador interactivo de inversión</b> para los servicios multimedia de Camilo, hecho para explorarlo en vivo, no una cotización fija en PDF.</li>
+        <li>Cada <b class="hl-mint">gajo de la rueda de colores</b> es un formato distinto (2D, 3D, Avatar IA): haz click y el precio del centro cambia al instante.</li>
+        <li>Elige si trabajamos <b class="hl-peach">Freelance (70%) o Formato Fijo (100%)</b>, y ajusta tus propias horas productivas si tu ritmo es distinto.</li>
+        <li>Cambia la <b class="hl-violet">moneda</b> y agrega tu <b class="hl-mint">comisión de venta</b> arriba del precio, para cotizar en vivo frente a tu propio cliente.</li>
+        <li>Cada globo de diálogo explica qué significa cada sigla en lenguaje simple, sin tecnicismos.</li>
+      </ul>
+      <div class="splash-contact">
+        <div class="name">Camilo Monsalve Moreno</div>
+        <div class="role">Diseñador Multimedia · AI Video Orchestrator</div>
+        <div class="splash-links">
+          <a class="wa-btn bevel" href="https://wa.me/573054455851" target="_blank" rel="noopener">WhatsApp</a>
+          <a class="glass bevel" href="mailto:camilosebas@gmail.com">Email</a>
+          <a class="glass bevel" href="https://www.linkedin.com/in/camilo-monsalve-3d/" target="_blank" rel="noopener">LinkedIn</a>
+          <a class="glass bevel" href="https://www.instagram.com/camimonsa3d/" target="_blank" rel="noopener">Instagram</a>
+          <a class="glass bevel" href="https://www.youtube.com/@CamiloMonsalve" target="_blank" rel="noopener">Reel / YouTube</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+gsap.registerPlugin(MotionPathPlugin);
+
+function bullets(items){ return '<ul>'+items.map(i=>'<li>'+i+'</li>').join('')+'</ul>'; }
+
+const formats = [
+  {key:'2dp', name:"2D Preset", short:"2D·P", mult:0.35, c1:'#93c5fd', c2:'#38bdf8',
+   legend: bullets([
+     '<b>2D·P</b> = 2D Preset',
+     '<b class="hl-mint">Plantilla lista</b>, ajustada a tu guion.',
+     'Ideal para <b class="hl-violet">volumen alto</b> y rapidez.',
+     'El costo más bajo de los 5 formatos.'
+   ])},
+  {key:'2dm', name:"2D a Medida", short:"2D·M", mult:0.6, c1:'#4fd1c5', c2:'#38bdf8',
+   legend: bullets([
+     '<b>2D·M</b> = 2D a Medida',
+     'Diseño <b class="hl-mint">100% original</b>, sin plantilla.',
+     'Refleja tu marca <b class="hl-violet">al detalle</b>.',
+     'Más tiempo de trabajo, más personalización.'
+   ])},
+  {key:'3dp', name:"3D Preset", short:"3D·P", mult:0.7, c1:'#f7b899', c2:'#f4978e',
+   legend: bullets([
+     '<b>3D·P</b> = 3D Preset',
+     'Personajes y escenas en <b class="hl-violet">Blender</b>, base reutilizable.',
+     'Buen balance entre <b class="hl-mint">calidad</b> y velocidad.',
+     'Ideal para series con el mismo estilo visual.'
+   ])},
+  {key:'ia', name:"Avatar IA", short:"IA", mult:1.0, c1:'#8b7cf6', c2:'#6a5acd',
+   legend: bullets([
+     '<b>IA</b> = Avatar / Explainer con Inteligencia Artificial',
+     'Explainer <b class="hl-violet">hiperrealista</b> generado con IA.',
+     'Pipeline: <b class="hl-mint">Higgsfield, Veo, Kling</b>.',
+     'El formato de <b class="hl-peach">mayor demanda</b> hoy.'
+   ])},
+  {key:'3dm', name:"3D a Medida", short:"3D·M", mult:1.4, c1:'#c4b5fd', c2:'#8b7cf6', isComplex:true,
+   modelHoursMin:14, modelHoursMax:24, animMultUnity:0.6, animMultVideo:0.85,
+   legend: bullets([
+     '<b>3D·M</b> = 3D a Medida',
+     'Modelado <b class="hl-violet">100% a la medida</b> en Blender (pago único).',
+     'Animación aparte: <b class="hl-mint">tiempo real (Unity/Unreal)</b> o cine.',
+     'El acabado más alto posible.'
+   ])},
+];
+
+const ADDON_LEGENDS = {
+  upres: bullets([
+    'Imagina una foto <b class="hl-mint">chiquita y borrosa</b> en tu celular.',
+    'Apretamos un <b class="hl-violet">botón mágico</b> y la hacemos grande y clara, sin tomarla de nuevo.',
+    'Eso mismo le hacemos a tus <b class="hl-peach">videos viejitos</b>: los limpiamos con IA para que se vean como nuevos.',
+    'Ahorra tiempo y dinero: no hay que grabar todo otra vez.'
+  ]),
+  brand: bullets([
+    'Cada marca que entrenan tiene su propia forma de <b class="hl-mint">"bailar"</b> en pantalla.',
+    'Creamos un <b class="hl-violet">librito de instrucciones</b> de ese baile: cómo se mueven sus colores, letras e iconos.',
+    'Así, sin importar quién haga el video después, la marca siempre <b class="hl-peach">se ve igual de bonita</b>.',
+    'El cliente final la reconoce al instante, como reconocer la voz de un amigo.'
+  ]),
+};
+
+const AVG_DAYS=2.5, RATE=70, WORKING_DAYS=22;
+const HOURS_DAY={freelance:8.4, fijo:12};
+let mode='freelance', activeIdx=3;
+let effHoursDay = HOURS_DAY.freelance;
+let current = {};
+
+const CUR_META = {
+  USD:{symbol:'USD $', decimals:2}, ARS:{symbol:'AR$', decimals:0}, COP:{symbol:'COL$', decimals:0},
+  PEN:{symbol:'S/', decimals:2}, PAB:{symbol:'B/.', decimals:2}, EUR:{symbol:'€', decimals:2}
+};
+let fxRates = {USD:1};
+const currencySelect = document.getElementById('currencySelect');
+const commissionInput = document.getElementById('commissionInput');
+const fxStatus = document.getElementById('fxStatus');
+
+fetch('https://open.er-api.com/v6/latest/USD').then(r=>r.json()).then(data=>{
+  if(data && data.rates){
+    fxRates = data.rates;
+    fxStatus.textContent = 'Tasas actualizadas: ' + (data.time_last_update_utc||'hoy');
+  } else { throw new Error('sin datos'); }
+}).catch(()=>{
+  fxStatus.textContent = 'Sin conexión a tasas de cambio — mostrando solo USD.';
+}).finally(()=> updateDisplay());
+
+function fmtMoney(amountUSD){
+  const commission = parseFloat(commissionInput.value)||0;
+  const marked = amountUSD * (1+commission/100);
+  const cur = currencySelect.value;
+  const meta = CUR_META[cur];
+  if(cur==='USD' || !fxRates[cur]){
+    return 'USD $'+marked.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+  const converted = marked*fxRates[cur];
+  return meta.symbol+' '+converted.toLocaleString('en-US',{minimumFractionDigits:meta.decimals,maximumFractionDigits:meta.decimals})+
+    ' <span style="color:var(--dim);font-weight:400;font-size:.8em;">(USD $'+marked.toFixed(2)+')</span>';
+}
+function fmtMoneyPerSec(amountUSD){ return fmtMoney(amountUSD)+'/seg'; }
+
+currencySelect.addEventListener('change', updateDisplay);
+commissionInput.addEventListener('input', updateDisplay);
+
+function polar(cx,cy,r,deg){const rad=(deg-90)*Math.PI/180;return {x:cx+r*Math.cos(rad), y:cy+r*Math.sin(rad)};}
+function arc(cx,cy,r,a0,a1){
+  const p0=polar(cx,cy,r,a1), p1=polar(cx,cy,r,a0);
+  const large = a1-a0 <= 180 ? 0 : 1;
+  return `M ${cx} ${cy} L ${p0.x} ${p0.y} A ${r} ${r} 0 ${large} 0 ${p1.x} ${p1.y} Z`;
+}
+
+const svg = document.querySelector('svg.wheel');
+const legend = document.getElementById('legend');
+const bubble = document.getElementById('bubble');
+const bubbleContent = document.getElementById('bubbleContent');
+const bubbleClose = document.getElementById('bubbleClose');
+const defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
+svg.appendChild(defs);
+
+const gap = 5, step = 360/formats.length;
+formats.forEach((f,i)=>{
+  const grad = document.createElementNS('http://www.w3.org/2000/svg','linearGradient');
+  grad.setAttribute('id','grad'+i); grad.setAttribute('x1','0%'); grad.setAttribute('y1','0%');
+  grad.setAttribute('x2','100%'); grad.setAttribute('y2','100%');
+  grad.innerHTML = `<stop offset="0%" stop-color="${f.c1}"/><stop offset="100%" stop-color="${f.c2}"/>`;
+  defs.appendChild(grad);
+
+  const a0 = i*step+gap/2, a1 = (i+1)*step-gap/2;
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d', arc(150,150,140,a0,a1));
+  path.setAttribute('fill', `url(#grad${i})`);
+  path.classList.add('seg'); path.dataset.i=i;
+  svg.appendChild(path);
+
+  const mid = polar(150,150,108,(a0+a1)/2);
+  const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+  t.setAttribute('x',mid.x); t.setAttribute('y',mid.y);
+  t.classList.add('seg-icon'); t.textContent = f.short;
+  svg.appendChild(t);
+
+  const l = document.createElement('span');
+  l.innerHTML = `<i style="background:linear-gradient(135deg,${f.c1},${f.c2})"></i>${f.name}`;
+  legend.appendChild(l);
+
+  path.addEventListener('click', ()=>{ select(i); showBubbleFromSVG(mid, f.legend); });
+  path.addEventListener('mouseenter', ()=> showBubbleFromSVG(mid, f.legend));
+  path.addEventListener('mouseleave', hideBubble);
+});
+
+function showBubbleAtViewport(x,y,html){
+  bubbleContent.innerHTML = html;
+  bubble.style.left = x+'px';
+  bubble.style.top = y+'px';
+  bubble.classList.add('visible');
+  gsap.killTweensOf(bubble);
+  gsap.set(bubble,{scale:.7,opacity:0});
+  gsap.to(bubble,{opacity:1,scale:1,duration:.28,ease:'back.out(1.7)'});
+}
+function showBubbleFromSVG(svgPoint, html){
+  const r = svg.getBoundingClientRect();
+  const scale = r.width/300;
+  const x = r.left + svgPoint.x*scale;
+  const y = r.top + svgPoint.y*scale - 24;
+  showBubbleAtViewport(x,y,html);
+}
+function hideBubble(){
+  gsap.to(bubble,{opacity:0,scale:.7,duration:.18,onComplete:()=>bubble.classList.remove('visible')});
+}
+bubbleClose.addEventListener('click', hideBubble);
+
+function select(i){
+  activeIdx=i;
+  document.querySelectorAll('.seg').forEach((s,j)=>s.classList.toggle('active', j===i));
+  render();
+}
+select(3);
+
+function render(){
+  const f = formats[activeIdx];
+  const hoursPerMin = AVG_DAYS*effHoursDay*f.mult;
+  const hoursPerSec = hoursPerMin/60;
+  const capacity = (effHoursDay*WORKING_DAYS)/hoursPerMin;
+
+  current = {isComplex:f.isComplex, name:f.name};
+  if(f.isComplex){
+    current.modelMinUSD = f.modelHoursMin*RATE;
+    current.modelMaxUSD = f.modelHoursMax*RATE;
+    current.unityUSD = hoursPerSec*f.animMultUnity*RATE;
+    current.videoUSD = hoursPerSec*f.animMultVideo*RATE;
+  } else {
+    current.priceSecUSD = hoursPerSec*RATE;
+  }
+  current.capacity = capacity;
+
+  document.getElementById('centerFmt').textContent = f.name;
+  updateDisplay();
+}
+
+function updateDisplay(){
+  if(!current.name) return;
+  if(current.isComplex){
+    document.getElementById('centerSingle').style.display='none';
+    document.getElementById('centerBreakdown').classList.add('show');
+    document.getElementById('bdModel').innerHTML = fmtMoney(current.modelMinUSD)+' – '+fmtMoney(current.modelMaxUSD);
+    document.getElementById('bdUnity').innerHTML = fmtMoneyPerSec(current.unityUSD);
+    document.getElementById('bdVideo').innerHTML = fmtMoneyPerSec(current.videoUSD);
+  } else {
+    document.getElementById('centerSingle').style.display='';
+    document.getElementById('centerBreakdown').classList.remove('show');
+    document.getElementById('centerPrice').innerHTML = fmtMoney(current.priceSecUSD);
+  }
+  const capEl = document.getElementById('statCap');
+  capEl.textContent = (Math.round(current.capacity*10)/10);
+}
+
+const hoursInput = document.getElementById('hoursInput');
+hoursInput.addEventListener('input', ()=>{
+  const v = parseFloat(hoursInput.value);
+  if(!isNaN(v) && v>0){ effHoursDay = v; render(); }
+});
+document.getElementById('hoursHelp').addEventListener('click', (e)=>{
+  const r = e.target.getBoundingClientRect();
+  showBubbleAtViewport(r.left+r.width/2, r.top-10, bullets([
+    'Estas son las <b class="hl-mint">horas de trabajo humano</b> que Camilo dedica cada día a producir tu contenido.',
+    'No son las 12 horas totales de su jornada: incluyen pausas, revisiones contigo y coordinación de equipo.',
+    'Es lo que <b class="hl-violet">realmente estás pagando</b> por minuto/segundo entregado.',
+    '<b class="hl-peach">Puedes ajustarlo</b> si conoces mejor su ritmo real: el precio se recalcula al instante.'
+  ]));
+});
+
+const nodeFreelance = document.getElementById('nodeFreelance');
+const nodeFijo = document.getElementById('nodeFijo');
+const traveler = document.getElementById('traveler');
+const ribbon = document.getElementById('ribbonPath');
+
+function travelTo(target){
+  gsap.to(traveler,{
+    motionPath:{path:ribbon, align:ribbon, alignOrigin:[0.5,0.5], start: target==='fijo'?0:1, end: target==='fijo'?1:0},
+    duration:.9, ease:'power2.inOut'
+  });
+}
+nodeFreelance.addEventListener('click', ()=>{
+  mode='freelance'; nodeFreelance.classList.add('active'); nodeFijo.classList.remove('active');
+  effHoursDay = HOURS_DAY.freelance; hoursInput.value = effHoursDay;
+  travelTo('freelance'); render();
+});
+nodeFijo.addEventListener('click', ()=>{
+  mode='fijo'; nodeFijo.classList.add('active'); nodeFreelance.classList.remove('active');
+  effHoursDay = HOURS_DAY.fijo; hoursInput.value = effHoursDay;
+  travelTo('fijo'); render();
+});
+
+document.getElementById('infoToggle').addEventListener('click', ()=>{
+  document.getElementById('infoPanel').classList.toggle('open');
+});
+
+document.querySelectorAll('.pill').forEach(p=>{
+  p.addEventListener('mouseenter', ()=>{
+    const r = p.getBoundingClientRect();
+    showBubbleAtViewport(r.left+r.width/2, r.top-10, ADDON_LEGENDS[p.dataset.legend]);
+  });
+  p.addEventListener('mouseleave', hideBubble);
+});
+
+const splashBackdrop = document.getElementById('splashBackdrop');
+function openSplash(){ splashBackdrop.classList.add('open'); }
+function closeSplash(){ splashBackdrop.classList.remove('open'); }
+document.getElementById('helpBtn').addEventListener('click', openSplash);
+document.getElementById('splashClose').addEventListener('click', closeSplash);
+splashBackdrop.addEventListener('click', e=>{ if(e.target===splashBackdrop) closeSplash(); });
+window.addEventListener('load', ()=> setTimeout(openSplash, 400));
+
+const spotlight = document.getElementById('spotlight');
+const spotX = gsap.quickTo(spotlight,'x',{duration:.6,ease:'power3'});
+const spotY = gsap.quickTo(spotlight,'y',{duration:.6,ease:'power3'});
+window.addEventListener('mousemove', e=>{ spotX(e.clientX); spotY(e.clientY); });
+
+const wheelWrap = document.getElementById('wheelWrap');
+const rotX = gsap.quickTo(wheelWrap,'rotationX',{duration:.5,ease:'power3'});
+const rotY = gsap.quickTo(wheelWrap,'rotationY',{duration:.5,ease:'power3'});
+wheelWrap.addEventListener('mousemove', e=>{
+  const r = wheelWrap.getBoundingClientRect();
+  const px = (e.clientX - r.left)/r.width - .5;
+  const py = (e.clientY - r.top)/r.height - .5;
+  rotY(px*14); rotX(-py*14);
+});
+wheelWrap.addEventListener('mouseleave', ()=>{ rotX(0); rotY(0); });
+</script>
+</body>
+</html>
