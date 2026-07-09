@@ -131,6 +131,20 @@ y entre más cápsulas, menor el precio de cada una. Muevan las variables y vean
       <input type="range" id="comm" min="0" max="100" step="5" value="0">
     </div>
   </div>
+  <div class="controls" style="margin-top:2px;">
+    <div class="ctrl" style="flex:2;min-width:270px;">
+      <label>Herramienta y créditos de producción</label>
+      <select id="toolChoice">
+        <option value="synthesia-toth" selected>Synthesia · cuenta y créditos de TOTH</option>
+        <option value="higgsfield-toth">Higgsfield · cuenta y créditos de TOTH</option>
+        <option value="higgsfield-mine">Higgsfield · con mis créditos (recargo)</option>
+      </select>
+    </div>
+    <div class="ctrl" id="hgSurchargeWrap" style="display:none;">
+      <label>Recargo créditos Higgsfield <span class="val" id="hgLabel">$18</span>/cápsula</label>
+      <input type="range" id="hgSurcharge" min="5" max="40" step="1" value="18">
+    </div>
+  </div>
   <label class="toggle">
     <input type="checkbox" id="avatarPremium">
     <span class="knob"></span>
@@ -179,6 +193,7 @@ y entre más cápsulas, menor el precio de cada una. Muevan las variables y vean
       <div class="lbl">Su inversión mensual</div>
       <div class="amt violetc" id="sumMonthly">$1,350</div>
       <div class="note" id="sumMonthlyNote">6 cápsulas · $225 c/u</div>
+      <div class="note" id="toolNote" style="margin-top:4px;"></div>
     </div>
     <div class="card glass bevel">
       <div class="lbl">Sugerido a su cliente final</div>
@@ -196,7 +211,8 @@ y entre más cápsulas, menor el precio de cada una. Muevan las variables y vean
 <div class="fine glass">
   <b>Todo plan incluye:</b>
   <ul>
-    <li>Cápsulas de ~1 minuto en Avatar IA (guion, línea gráfica y herramientas provistas por TOTH; créditos de la plataforma de ustedes, cubiertos por TOTH).</li>
+    <li>Cápsulas de ~1 minuto en Avatar IA (guion, línea gráfica y herramientas provistas por TOTH).</li>
+    <li>El precio base ya cubre trabajar en Synthesia o en Higgsfield, siempre que la cuenta y los créditos de generación sean de TOTH. Si prefieren que yo produzca desde mi propia cuenta de Higgsfield (por ejemplo para un presentador más premium), aplica un recargo por cápsula que cubre mi suscripción y consumo de créditos; el valor de arriba es un estimado transparente y lo afinamos con el número real ya medido en la primera cápsula piloto.</li>
     <li>Entrega en MP4 16:9, con subtítulos si el cliente lo pide.</li>
     <li>Las rondas de ajuste que hagan falta sobre lo aprobado. Un cambio de alcance distinto al material aprobado se conversa y cotiza aparte, siempre de frente.</li>
     <li>Compromiso con la vanguardia: siempre la mejor herramienta de IA del momento, sin amarrarnos a una sola plataforma.</li>
@@ -244,12 +260,24 @@ y entre más cápsulas, menor el precio de cada una. Muevan las variables y vean
   }
 
   var caps=document.getElementById('caps'), comm=document.getElementById('comm'),
-      curSel=document.getElementById('currency'), prem=document.getElementById('avatarPremium');
+      curSel=document.getElementById('currency'), prem=document.getElementById('avatarPremium'),
+      toolChoice=document.getElementById('toolChoice'), hgWrap=document.getElementById('hgSurchargeWrap'),
+      hgSurcharge=document.getElementById('hgSurcharge');
+
+  var TOOL_LABEL={
+    'synthesia-toth':'Synthesia, créditos de TOTH',
+    'higgsfield-toth':'Higgsfield, créditos de TOTH',
+    'higgsfield-mine':'Higgsfield, mis créditos'
+  };
 
   function render(){
     var n=parseInt(caps.value,10), pct=parseInt(comm.value,10);
     cur=curSel.value;
-    var per=perCap(n), monthly=Math.round(per*n);
+    var useMine=toolChoice.value==='higgsfield-mine';
+    hgWrap.style.display=useMine?'':'none';
+    document.getElementById('hgLabel').textContent='$'+hgSurcharge.value;
+    var surcharge=useMine?parseInt(hgSurcharge.value,10):0;
+    var per=perCap(n)+surcharge, monthly=Math.round(per*n);
     document.getElementById('capsLabel').textContent=n;
     document.getElementById('commLabel').textContent=pct+'%';
     document.getElementById('cCaps').textContent=n;
@@ -257,6 +285,7 @@ y entre más cápsulas, menor el precio de cada una. Muevan las variables y vean
     document.getElementById('cMonth').textContent=fmt(monthly);
     document.getElementById('sumMonthly').textContent=fmt(monthly);
     document.getElementById('sumMonthlyNote').textContent=n+' cápsula'+(n>1?'s':'')+' · '+fmt(Math.round(per))+' c/u';
+    document.getElementById('toolNote').textContent=TOOL_LABEL[toolChoice.value]+(surcharge?' (incluye recargo de créditos estimado)':'');
     document.getElementById('sumClient').textContent=fmt(Math.round(monthly*(1+pct/100)));
     document.getElementById('sumClientNote').textContent='con su comisión del '+pct+'%';
     document.getElementById('premiumCard').style.display=prem.checked?'':'none';
@@ -265,14 +294,16 @@ y entre más cápsulas, menor el precio de cada una. Muevan las variables y vean
     document.querySelectorAll('td[data-usd]').forEach(function(td){
       td.textContent=fmt(Math.round(parseFloat(td.getAttribute('data-usd'))));
     });
-    /* Resaltar fila si coincide con un plan fijo */
-    document.getElementById('rowB').classList.toggle('selected',n===6);
-    document.getElementById('rowC').classList.toggle('selected',n===12);
+    /* Resaltar fila si coincide con un plan fijo (solo aplica al escenario base, sin recargo) */
+    document.getElementById('rowB').classList.toggle('selected',n===6 && surcharge===0);
+    document.getElementById('rowC').classList.toggle('selected',n===12 && surcharge===0);
   }
   caps.addEventListener('input',render);
   comm.addEventListener('input',render);
   curSel.addEventListener('change',render);
   prem.addEventListener('change',render);
+  toolChoice.addEventListener('change',render);
+  hgSurcharge.addEventListener('input',render);
   /* re-render al llegar las tasas */
   setTimeout(render,1200);
   render();
