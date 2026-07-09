@@ -52,6 +52,8 @@
   input[type=range]{width:100%;accent-color:var(--violet2);height:32px;cursor:pointer;}
   select{font-family:'Quicksand',sans-serif;font-weight:700;font-size:13.5px;color:var(--violet2);
     background:var(--glass-hi);border:1px solid var(--glass-border);border-radius:12px;padding:8px 12px;cursor:pointer;}
+  #toolChoice{border:2px solid var(--violet2);background:linear-gradient(135deg,rgba(255,255,255,.92),rgba(255,255,255,.6));
+    box-shadow:0 4px 14px rgba(106,90,205,.22);padding:10px 14px;}
   .toggle{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;padding:8px 0;}
   .toggle input{display:none;}
   .knob{width:44px;height:24px;border-radius:999px;background:rgba(107,114,128,.3);position:relative;transition:background .25s;}
@@ -154,7 +156,7 @@ y entre más cápsulas, menor el precio de cada una. Muevan las variables y vean
       <span class="knob"></span>
       <span class="txt">Agregar presentador premium exclusivo <b style="color:var(--violet2)">+$400 USD</b> (pago único, sirve para todas las cápsulas siguientes)</span>
     </label>
-    <div class="plandesc" id="premiumHint" style="margin-top:6px;">Se crea y se anima con Higgsfield. Para usarlo en sus cápsulas, elijan Higgsfield como herramienta arriba.</div>
+    <div class="plandesc" id="premiumHint" style="margin-top:6px;">Presentador creado con IA generativa de última generación. El flujo técnico exacto para reutilizarlo en cada plataforma se confirma con Camilo antes de aplicarlo al proyecto.</div>
   </div>
 
   <table>
@@ -218,7 +220,7 @@ y entre más cápsulas, menor el precio de cada una. Muevan las variables y vean
   <b>Todo plan incluye:</b>
   <ul>
     <li>Cápsulas de ~1 minuto en Avatar IA (guion, línea gráfica y herramientas provistas por TOTH).</li>
-    <li>El precio base ya cubre trabajar en Synthesia o en Higgsfield, siempre que la cuenta y los créditos de generación sean de TOTH. Si prefieren que yo produzca desde mi propia cuenta de Higgsfield (por ejemplo para un presentador más premium), aplica un recargo por cápsula que cubre mi suscripción y consumo de créditos; el valor de arriba es un estimado transparente y lo afinamos con el número real ya medido en la primera cápsula piloto.</li>
+    <li>El precio base ya cubre trabajar en Synthesia o en Higgsfield, siempre que la cuenta y los créditos de generación sean de TOTH. Si prefieren que yo produzca desde mi propia cuenta de Higgsfield, aplica un recargo por cápsula que cubre mi suscripción y consumo de créditos; el valor de arriba es un estimado transparente y lo afinamos con el número real ya medido en la primera cápsula piloto.</li>
     <li>Entrega en MP4 16:9, con subtítulos si el cliente lo pide.</li>
     <li>Las rondas de ajuste que hagan falta sobre lo aprobado. Un cambio de alcance distinto al material aprobado se conversa y cotiza aparte, siempre de frente.</li>
     <li>Compromiso con la vanguardia: siempre la mejor herramienta de IA del momento, sin amarrarnos a una sola plataforma.</li>
@@ -296,13 +298,7 @@ y entre más cápsulas, menor el precio de cada una. Muevan las variables y vean
     document.getElementById('sumClientNote').textContent='con su comisión del '+pct+'%';
     document.getElementById('premiumCard').style.display=prem.checked?'':'none';
     document.getElementById('sumPremium').textContent=fmt(400);
-    var needsHiggsfield=prem.checked && toolChoice.value==='synthesia-toth';
     document.getElementById('premiumBox').classList.toggle('attention',prem.checked);
-    var hint=document.getElementById('premiumHint');
-    hint.classList.toggle('warn',needsHiggsfield);
-    hint.textContent=needsHiggsfield
-      ? 'Para activarlo, primero elijan Higgsfield como herramienta arriba (con créditos de TOTH o míos).'
-      : 'Se crea y se anima con Higgsfield. Reutilizable en todas las cápsulas siguientes que lo usen.';
     /* Filas fijas de la tabla en la moneda elegida */
     document.querySelectorAll('td[data-usd]').forEach(function(td){
       td.textContent=fmt(Math.round(parseFloat(td.getAttribute('data-usd'))));
