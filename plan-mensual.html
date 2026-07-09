@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan Mensual · Producción Avatar IA · Camilo Monsalve</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1f2430; --dim:#6b7280;
+    --glass:rgba(255,255,255,.5); --glass-hi:rgba(255,255,255,.75); --glass-border:rgba(255,255,255,.65);
+    --violet:#8b7cf6; --violet2:#6a5acd; --mint:#4fd1c5; --mint2:#0d9488;
+    --peach:#f7b899; --peach2:#f4978e; --blue:#93c5fd; --lav:#c4b5fd;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;min-height:100vh;color:var(--ink);font-family:'Quicksand',sans-serif;
+    display:flex;flex-direction:column;align-items:center;padding:clamp(16px,4vw,48px);
+    background:#f6efe6;overflow-x:hidden;position:relative;
+  }
+  .blob{position:fixed;border-radius:50%;filter:blur(70px);opacity:.55;z-index:0;pointer-events:none;}
+  .b1{width:420px;height:420px;background:var(--violet);top:-120px;left:-100px;}
+  .b2{width:380px;height:380px;background:var(--mint);bottom:-140px;right:-100px;}
+  .b3{width:300px;height:300px;background:var(--peach);top:40%;right:10%;}
+  #spotlight{position:fixed;width:340px;height:340px;border-radius:50%;pointer-events:none;z-index:1;
+    background:radial-gradient(circle,rgba(255,255,255,.5),transparent 70%);
+    transform:translate(-50%,-50%);left:0;top:0;mix-blend-mode:screen;}
+
+  .badge{position:relative;z-index:2;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);
+    background:var(--glass);backdrop-filter:blur(12px);border:1px solid var(--glass-border);
+    border-radius:999px;padding:5px 14px;margin-bottom:14px;}
+  h1{position:relative;z-index:2;font-size:clamp(20px,3vw,30px);margin:0 0 6px;text-align:center;font-weight:700;}
+  .sub{position:relative;z-index:2;font-size:14px;color:var(--dim);text-align:center;margin:0 0 26px;max-width:560px;line-height:1.55;}
+
+  .glass{background:linear-gradient(135deg,var(--glass-hi),var(--glass));backdrop-filter:blur(18px) saturate(160%);
+    border:1px solid var(--glass-border);box-shadow:0 12px 34px rgba(80,60,120,.14);border-radius:26px;}
+
+  .bevel{position:relative;box-shadow:
+    inset 0 1.5px 1px rgba(255,255,255,.95),
+    inset 0 -3px 6px rgba(107,114,128,.22),
+    0 8px 18px rgba(80,60,120,.18);}
+
+  .panel{position:relative;z-index:2;width:min(760px,94vw);padding:clamp(18px,3.4vw,34px);margin-bottom:22px;}
+
+  /* ── Controles ── */
+  .controls{display:flex;flex-wrap:wrap;gap:14px 22px;align-items:flex-end;justify-content:center;margin-bottom:6px;}
+  .ctrl{display:flex;flex-direction:column;gap:6px;min-width:170px;flex:1;}
+  .ctrl label{font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--dim);}
+  .ctrl .val{font-size:13px;font-weight:700;color:var(--violet2);}
+  input[type=range]{width:100%;accent-color:var(--violet2);height:32px;cursor:pointer;}
+  select{font-family:'Quicksand',sans-serif;font-weight:700;font-size:13.5px;color:var(--violet2);
+    background:var(--glass-hi);border:1px solid var(--glass-border);border-radius:12px;padding:8px 12px;cursor:pointer;}
+  .toggle{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;padding:8px 0;}
+  .toggle input{display:none;}
+  .knob{width:44px;height:24px;border-radius:999px;background:rgba(107,114,128,.3);position:relative;transition:background .25s;}
+  .knob::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;
+    box-shadow:0 2px 5px rgba(0,0,0,.25);transition:left .25s;}
+  .toggle input:checked + .knob{background:var(--mint2);}
+  .toggle input:checked + .knob::after{left:23px;}
+  .toggle span.txt{font-size:13px;font-weight:600;}
+
+  /* ── Tabla tradicional ── */
+  table{width:100%;border-collapse:separate;border-spacing:0;margin-top:14px;font-size:14.5px;}
+  th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);font-weight:700;
+    padding:10px 12px;text-align:left;border-bottom:2px solid rgba(107,114,128,.25);}
+  th.num, td.num{text-align:right;}
+  td{padding:13px 12px;border-bottom:1px solid rgba(107,114,128,.16);font-weight:500;}
+  tr.plan{transition:background .25s;}
+  tr.plan:hover{background:rgba(255,255,255,.45);}
+  tr.selected{background:linear-gradient(90deg,rgba(139,124,246,.16),rgba(79,209,197,.14));}
+  tr.selected td:first-child{border-left:4px solid var(--violet2);border-radius:8px 0 0 8px;}
+  .tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+    color:#fff;background:linear-gradient(135deg,var(--violet),var(--violet2));border-radius:999px;padding:3px 10px;margin-left:8px;vertical-align:middle;}
+  .tag.mint{background:linear-gradient(135deg,var(--mint),var(--mint2));}
+  .planname{font-weight:700;}
+  .plandesc{font-size:12px;color:var(--dim);margin-top:2px;line-height:1.4;}
+  .big{font-weight:700;font-size:16px;color:var(--violet2);}
+  .percap{font-size:12px;color:var(--dim);}
+
+  /* ── Resumen ── */
+  .summary{display:flex;flex-wrap:wrap;gap:14px;margin-top:20px;justify-content:center;}
+  .card{flex:1;min-width:200px;padding:18px 20px;border-radius:20px;text-align:center;}
+  .card .lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);font-weight:700;margin-bottom:6px;}
+  .card .amt{font-size:clamp(20px,3.2vw,27px);font-weight:700;letter-spacing:-.01em;}
+  .card .amt.mintc{color:var(--mint2);}
+  .card .amt.violetc{color:var(--violet2);}
+  .card .note{font-size:11.5px;color:var(--dim);margin-top:5px;line-height:1.4;}
+
+  .fine{position:relative;z-index:2;width:min(760px,94vw);font-size:12.5px;color:var(--dim);line-height:1.7;
+    padding:16px 22px;}
+  .fine b{color:var(--ink);}
+  .fine ul{margin:6px 0 0;padding-left:18px;}
+  .fine li{margin-bottom:5px;}
+  .footer{position:relative;z-index:2;font-size:12px;color:var(--dim);text-align:center;margin-top:10px;line-height:1.7;}
+  .footer a{color:var(--violet2);font-weight:700;text-decoration:none;}
+  @media (max-width:560px){
+    th:nth-child(3), td:nth-child(3){display:none;}
+    td{padding:11px 8px;}
+  }
+</style>
+</head>
+<body>
+<div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+<div id="spotlight"></div>
+
+<div class="badge">Camilo Monsalve · Producción Avatar IA para TOTH</div>
+<h1>Plan mensual de producción</h1>
+<p class="sub">Como un plan de internet: ustedes eligen el ritmo de cápsulas al mes, reservo mi agenda por adelantado,
+y entre más cápsulas, menor el precio de cada una. Muevan las variables y vean todo al instante.</p>
+
+<div class="panel glass">
+  <div class="controls">
+    <div class="ctrl" style="flex:2;min-width:230px;">
+      <label>Cápsulas por mes <span class="val" id="capsLabel">6</span></label>
+      <input type="range" id="caps" min="1" max="12" step="1" value="6">
+    </div>
+    <div class="ctrl">
+      <label>Moneda</label>
+      <select id="currency">
+        <option value="USD" selected>USD · Dólar</option>
+        <option value="COP">COP · Peso colombiano</option>
+        <option value="ARS">ARS · Peso argentino</option>
+        <option value="PEN">PEN · Sol peruano</option>
+        <option value="EUR">EUR · Euro</option>
+      </select>
+    </div>
+    <div class="ctrl">
+      <label>Su comisión de venta <span class="val" id="commLabel">0%</span></label>
+      <input type="range" id="comm" min="0" max="100" step="5" value="0">
+    </div>
+  </div>
+  <label class="toggle">
+    <input type="checkbox" id="avatarPremium">
+    <span class="knob"></span>
+    <span class="txt">Agregar presentador premium exclusivo (pago único, desde $400 USD, sirve para todas las cápsulas)</span>
+  </label>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Plan</th>
+        <th class="num">Cápsulas/mes</th>
+        <th class="num">Por cápsula</th>
+        <th class="num">Mensual</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="plan" id="rowA">
+        <td><span class="planname">Puntual</span><div class="plandesc">Sin compromiso, cápsula por cápsula</div></td>
+        <td class="num">las que surjan</td>
+        <td class="num" data-usd="320">$320</td>
+        <td class="num percap">por pieza</td>
+      </tr>
+      <tr class="plan" id="rowB">
+        <td><span class="planname">Recurrente</span><div class="plandesc">Agenda reservada cada mes</div></td>
+        <td class="num">6</td>
+        <td class="num" data-usd="225">$225</td>
+        <td class="num big" data-usd="1350">$1,350</td>
+      </tr>
+      <tr class="plan" id="rowC">
+        <td><span class="planname">Ancla dedicada</span><span class="tag">Recomendado</span><div class="plandesc">Prioridad total en mi agenda</div></td>
+        <td class="num">hasta 12</td>
+        <td class="num" data-usd="201.75">$202</td>
+        <td class="num big" data-usd="2421">$2,421</td>
+      </tr>
+      <tr class="plan selected" id="rowCustom">
+        <td><span class="planname">Su plan a medida</span><span class="tag mint">↑ muevan el deslizador</span><div class="plandesc">Se ajusta a su ritmo real</div></td>
+        <td class="num" id="cCaps">6</td>
+        <td class="num" id="cPer">$225</td>
+        <td class="num big" id="cMonth">$1,350</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="summary">
+    <div class="card glass bevel">
+      <div class="lbl">Su inversión mensual</div>
+      <div class="amt violetc" id="sumMonthly">$1,350</div>
+      <div class="note" id="sumMonthlyNote">6 cápsulas · $225 c/u</div>
+    </div>
+    <div class="card glass bevel">
+      <div class="lbl">Sugerido a su cliente final</div>
+      <div class="amt mintc" id="sumClient">$1,350</div>
+      <div class="note" id="sumClientNote">con su comisión del 0%</div>
+    </div>
+    <div class="card glass bevel" id="premiumCard" style="display:none;">
+      <div class="lbl">Presentador premium</div>
+      <div class="amt violetc" id="sumPremium">$400</div>
+      <div class="note">pago único, primer mes</div>
+    </div>
+  </div>
+</div>
+
+<div class="fine glass">
+  <b>Todo plan incluye:</b>
+  <ul>
+    <li>Cápsulas de ~1 minuto en Avatar IA (guion, línea gráfica y herramientas provistas por TOTH; créditos de la plataforma de ustedes, cubiertos por TOTH).</li>
+    <li>Entrega en MP4 16:9, con subtítulos si el cliente lo pide.</li>
+    <li>Las rondas de ajuste que hagan falta sobre lo aprobado. Un cambio de alcance distinto al material aprobado se conversa y cotiza aparte, siempre de frente.</li>
+    <li>Compromiso con la vanguardia: siempre la mejor herramienta de IA del momento, sin amarrarnos a una sola plataforma.</li>
+    <li>Puerta abierta a crecer juntos hacia 2D y 3D cuando lo necesiten.</li>
+  </ul>
+</div>
+
+<div class="footer">
+  ¿Su ritmo es mayor a 12 cápsulas al mes? Conversemos y armamos un plan a esa escala.<br>
+  Camilo Monsalve Moreno · Diseñador multimedia · AI Content Creator · WhatsApp +57 305 445 5851<br>
+  <span id="rateNote">Tasas de cambio en tiempo real.</span>
+</div>
+
+<script>
+(function(){
+  /* Spotlight sigue el mouse */
+  var spot=document.getElementById('spotlight');
+  document.addEventListener('mousemove',function(e){spot.style.left=e.clientX+'px';spot.style.top=e.clientY+'px';});
+
+  /* Anclas de precio (USD, por cápsula) */
+  var ANCHORS=[[1,320],[6,225],[12,201.75]];
+  function perCap(n){
+    if(n<=ANCHORS[0][0])return ANCHORS[0][1];
+    for(var i=0;i<ANCHORS.length-1;i++){
+      var a=ANCHORS[i],b=ANCHORS[i+1];
+      if(n>=a[0]&&n<=b[0]) return a[1]+(b[1]-a[1])*(n-a[0])/(b[0]-a[0]);
+    }
+    return ANCHORS[ANCHORS.length-1][1];
+  }
+
+  /* Moneda */
+  var rates={USD:1}, cur='USD';
+  var SYM={USD:'$',COP:'$',ARS:'$',PEN:'S/',EUR:'€'};
+  fetch('https://open.er-api.com/v6/latest/USD').then(function(r){return r.json();}).then(function(d){
+    if(d&&d.rates){rates=d.rates;rates.USD=1;}
+  }).catch(function(){
+    document.getElementById('rateNote').textContent='Sin conexión a tasas de cambio: mostrando solo USD.';
+    document.getElementById('currency').value='USD';
+    document.getElementById('currency').disabled=true;
+  });
+  function fmt(usd){
+    var r=rates[cur]||1, v=usd*r;
+    var dec=(cur==='COP'||cur==='ARS')?0:(v>=1000?0:2);
+    return SYM[cur]+v.toLocaleString('es-CO',{minimumFractionDigits:dec,maximumFractionDigits:dec})+(cur!=='USD'?' '+cur:'');
+  }
+
+  var caps=document.getElementById('caps'), comm=document.getElementById('comm'),
+      curSel=document.getElementById('currency'), prem=document.getElementById('avatarPremium');
+
+  function render(){
+    var n=parseInt(caps.value,10), pct=parseInt(comm.value,10);
+    cur=curSel.value;
+    var per=perCap(n), monthly=Math.round(per*n);
+    document.getElementById('capsLabel').textContent=n;
+    document.getElementById('commLabel').textContent=pct+'%';
+    document.getElementById('cCaps').textContent=n;
+    document.getElementById('cPer').textContent=fmt(Math.round(per));
+    document.getElementById('cMonth').textContent=fmt(monthly);
+    document.getElementById('sumMonthly').textContent=fmt(monthly);
+    document.getElementById('sumMonthlyNote').textContent=n+' cápsula'+(n>1?'s':'')+' · '+fmt(Math.round(per))+' c/u';
+    document.getElementById('sumClient').textContent=fmt(Math.round(monthly*(1+pct/100)));
+    document.getElementById('sumClientNote').textContent='con su comisión del '+pct+'%';
+    document.getElementById('premiumCard').style.display=prem.checked?'':'none';
+    document.getElementById('sumPremium').textContent=fmt(400);
+    /* Filas fijas de la tabla en la moneda elegida */
+    document.querySelectorAll('td[data-usd]').forEach(function(td){
+      td.textContent=fmt(Math.round(parseFloat(td.getAttribute('data-usd'))));
+    });
+    /* Resaltar fila si coincide con un plan fijo */
+    document.getElementById('rowB').classList.toggle('selected',n===6);
+    document.getElementById('rowC').classList.toggle('selected',n===12);
+  }
+  caps.addEventListener('input',render);
+  comm.addEventListener('input',render);
+  curSel.addEventListener('change',render);
+  prem.addEventListener('change',render);
+  /* re-render al llegar las tasas */
+  setTimeout(render,1200);
+  render();
+})();
+</script>
+</body>
+</html>
